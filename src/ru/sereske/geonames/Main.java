@@ -119,6 +119,22 @@ public class Main {
 				}
 			}
 		}
+		
+		for (City city : cities) {
+			if (city.getAdmin1Code().equals("IN")) {
+				boolean hasBigBrother = false;
+				for (City megaCity : megaCities) {
+					double distance = getDistance(city, megaCity);
+					if (!city.equals(megaCity) && distance < 100 && city.getAdmin1Code().equals("IN")) {
+						hasBigBrother = true;
+						break;
+					}
+				}
+				if (!hasBigBrother) {
+					System.out.println("У этого города нет большого брата: " + city.getName());
+				}
+			}
+		}
 		/*
 		City cityGhandinagar = null;
 		City cityAhmedabad = null;
