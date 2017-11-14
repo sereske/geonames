@@ -16,13 +16,33 @@ public class Main {
 	
 	private static final String CITY_FILE_NAME = "c:\\cities15000.txt";
 	private static final String COUNTRY_FILE_NAME = "c:\\countryInfo.txt";
+	private static final String REGION_FILE_NAME = "c:\\admin1CodesASCII.txt";
 	
 	private static final int EARTH_RADIUS = 6400;
 	
 	public static void main(String[] args) {
 		List<Country> countries = new ArrayList<>();
 		List<City> cities = new ArrayList<>();
+		List<City> bigCities = new ArrayList<>();
+		List<City> normalCities = new ArrayList<>();
 		List<City> megaCities = new ArrayList<>();
+		List<City> smallCities = new ArrayList<>();
+		List<Region> regions = new ArrayList<>();
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(REGION_FILE_NAME)))) {
+			String s = null;
+			while ((s = reader.readLine()) != null) {
+				String[] parameters = s.split("\t");
+				String code = parameters[0];
+				String name = parameters[1];
+				
+				Region region = new Region();
+				region.setCode(code);
+				region.setName(name);
+				regions.add(region);
+			}
+		} catch (Exception exc) {
+			exc.printStackTrace();
+		}
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(COUNTRY_FILE_NAME)))) {
 			
 			String s = null;
@@ -66,6 +86,7 @@ public class Main {
 				double latitude = Double.parseDouble(parameters[4]);
 				double longitude = Double.parseDouble(parameters[5]);
 				String admin1Code = parameters[8];
+				String admin3Code = parameters[10];
 				long population = Long.parseLong(parameters[14]); 
 				
 				City city = new City();
@@ -75,18 +96,31 @@ public class Main {
 				city.setLongitude(longitude);
 				city.setAdmin1Code(admin1Code);
 				city.setPopulation(population);
-				//System.out.println("id: " + id + ", name: " + name + ", latitude: " + latitude + ", longitude: " + longitude + ", population: " + population);
+				city.setAdmin3Code(admin3Code);
+				
+				cities.add(city);
+				
+				/*
 				if (city.getPopulation() < 500000 && city.getPopulation() > 100000) {
 					cities.add(city);
 				}
+				*/
 				if (city.getPopulation() > 1000000) {
 					megaCities.add(city);
 				}
+				/*
+				if (city.getPopulation() >= 500000 && city.getPopulation() < 1000000) {
+					bigCities.add(city);
+				}
+				if (city.getPopulation() < 100000 && city.getPopulation() > 50000) {
+					smallCities.add(city);
+				}
+				*/
 			}
-			System.out.println(cities.size());
 		} catch (Exception exc) {
 			exc.printStackTrace();
 		}
+		/*
 		Map<String, Integer> result = new HashMap<>();
 		for (Country country : countries) {
 			result.put(country.getName(), 0);
@@ -97,12 +131,14 @@ public class Main {
 				}
 			}
 		}
+		
 		result = sortByValue(result);
 		for (Map.Entry<String, Integer> pair : result.entrySet()) {
 			if (pair.getValue() != 0) {
 				System.out.println(pair.getKey() + ": " + pair.getValue());
 			}
 		}
+		*/
 		Collections.sort(cities, new Comparator<City>() {
 
 			@Override
@@ -110,7 +146,7 @@ public class Main {
 				return c1.getName().compareTo(c2.getName());
 			}
 		});
-		
+		/*
 		for (City city : cities) {
 			for (City megaCity : megaCities) {
 				double distance = getDistance(city, megaCity);
@@ -119,39 +155,85 @@ public class Main {
 				}
 			}
 		}
-		
+		*/
 		for (City city : cities) {
-			if (city.getAdmin1Code().equals("IN")) {
+			if (city.getAdmin1Code().equals("IN") && city.getPopulation() >= 100000 && city.getPopulation() <= 500000) {
 				boolean hasBigBrother = false;
 				for (City megaCity : megaCities) {
 					double distance = getDistance(city, megaCity);
-					if (!city.equals(megaCity) && distance < 100 && city.getAdmin1Code().equals("IN")) {
+					if (megaCity.getAdmin1Code().equals("IN") && distance < 100) {
 						hasBigBrother = true;
 						break;
 					}
 				}
 				if (!hasBigBrother) {
-					System.out.println("У этого города нет большого брата: " + city.getName());
+					normalCities.add(city);
+					//System.out.println("У этого города (100-500) нет большого брата: " + city.getName());
 				}
 			}
 		}
-		/*
-		City cityGhandinagar = null;
-		City cityAhmedabad = null;
+		
 		for (City city : cities) {
-			if (city.getName().equals("Ghandinagar")) {
-				cityGhandinagar = city;
-				break;
+			if (city.getAdmin1Code().equals("IN") && city.getPopulation() > 500000 && city.getPopulation() < 1000000) {
+				boolean hasBigBrother = false;
+				for (City megaCity : megaCities) {
+					double distance = getDistance(city, megaCity);
+					if (megaCity.getAdmin1Code().equals("IN") && distance < 200) {
+						hasBigBrother = true;
+						break;
+					}
+				}
+				if (!hasBigBrother) {
+					bigCities.add(city);
+					//System.out.println("У этого города (500-1000) нет большого брата: " + city.getName() + ", население " + city.getPopulation());
+				}
 			}
 		}
+		
 		for (City city : cities) {
-			if (city.getName().equals("Ahmedabad")) {
-				cityAhmedabad = city;
-				break;
+			if (city.getAdmin1Code().equals("IN") && city.getPopulation() > 50000 && city.getPopulation() < 100000) {
+				boolean hasBigBrother = false;
+				for (City megaCity : megaCities) {
+					double distance = getDistance(city, megaCity);
+					if (megaCity.getAdmin1Code().equals("IN") && distance < 100) {
+						hasBigBrother = true;
+						break;
+					}
+				}
+				if (!hasBigBrother) {
+					smallCities.add(city);
+					//System.out.println("У этого города (50-100) нет большого брата: " + city.getName());
+				}
 			}
 		}
-		System.out.println(cityGhandinagar.getName() + " - " + cityAhmedabad.getName() + ": " + getDistance(cityAhmedabad, cityGhandinagar));
-		*/
+		System.out.println(cities.size());
+		System.out.println(cities.stream().filter(c -> c.getAdmin1Code().equals("IN")).collect(Collectors.toList()).size());
+		System.out.println("100-500: " + normalCities.size());
+		System.out.println("500-1000: " + bigCities.size());
+		System.out.println("50-100: " + smallCities.size());
+		
+		groupCitiesByRegion(normalCities, regions.stream().filter(r -> r.getCode().startsWith("IN.")).collect(Collectors.toList()));
+		groupCitiesByRegion(bigCities, regions.stream().filter(r -> r.getCode().startsWith("IN.")).collect(Collectors.toList()));
+		groupCitiesByRegion(smallCities, regions.stream().filter(r -> r.getCode().startsWith("IN.")).collect(Collectors.toList()));
+	}
+	
+	private static void groupCitiesByRegion(List<City> cities, List<Region> regions) {
+		Map<String, List<City>> map = new HashMap<>();
+		for (Region region : regions) {
+			map.put(region.getName(), new ArrayList<>());
+			for (City city : cities) {
+				if ((city.getAdmin1Code() + "." + city.getAdmin3Code()).equals(region.getCode())) {
+					map.get(region.getName()).add(city);
+				}
+			}
+		}
+		for (Map.Entry<String, List<City>> pair : map.entrySet()) {
+			String state = pair.getKey();
+			List<City> cities2 = pair.getValue();
+			for (City city : cities2) {
+				System.out.println(state + ": " + city.getName() + ", " + city.getPopulation());
+			}
+		}
 	}
 	
 	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
